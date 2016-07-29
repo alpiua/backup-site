@@ -1,2 +1,2 @@
-# prestashop cms useful utilities etc
+# hello world
 backup.sh - backuping separately prestashop files, base, product images
