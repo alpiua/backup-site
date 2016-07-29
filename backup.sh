@@ -39,4 +39,4 @@ echo "Архивирую файлы изображений" `date`
         du -h $workdir/$site/$site-img.zip || echo "ОШИБКА СОЗДАНИЯ ИЗОБРАЖЕНИЙ" `date`
 
 
-$workdir/drive push -ignore-conflict $workdir/$site
+$workdir/drive push -ignore-conflict -quiet $workdir/$site
