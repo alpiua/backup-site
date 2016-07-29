@@ -2,41 +2,45 @@
 #  Backup to Google Drive Script For Prestashop by alpi  #
 ##########################################################
 
-site=glamourshop.ru
-workdir=/home/backup
-sitedir=/home/www/glamourshop.ru
-mysqldb    = glamour_db
-mysqluser  = glamour_db
-mysqlpass  = Ro2DCSce
+site= site.com
+workdir= /var/backupdir
+sitedir= /var/www/sitedir
+mysqldb    = db_name
+mysqluser  = db_user
+mysqlpass  = db_password
 
-echo "Делаю дамп базы данных" `date`
+echo "Роблю дамп бази даних" `date`
 
     mysqldump -u $mysqluser -p$mysqlpass $mysqldb > $workdir/$site.sql
     zip -rq $workdir/$site/$site.sql.zip $workdir/$site.sql
 
     [ -f "$workdir/$site.sql" ] &&
-        echo "Файл SQL базы создан" `date` &&
-        du -h $workdir/$site.sql || echo "ОШИБКА СОЗДАНИЯ БАЗЫ SQL" `date`
+        echo "Файл SQL бази створено" `date` &&
+        du -h $workdir/$site.sql || echo "ПОМИЛКА СТВОРЕННЯ БАЗИ SQL" `date`
 
     rm -rf $workdir/$site.sql
 
 
-echo "Архивирую файлы магазина (без картинок)" `date`
+echo "Архівую файли магазину (без картинок)" `date`
 
     zip -rq -x=$sitedir/cache/smarty/\* -x=$sitedir/img/p/\* -x=$sitedir/newpresta/\* $workdir/$site/$site.zip $sitedir/
 
     [ -f "$workdir/$site/$site.zip" ] &&
-        echo "Файлы сайта заархивированы" `date` &&
-        du -h $workdir/$site/$site.zip || echo "ОШИБКА СОЗДАНИЯ ФАЙЛОВ САЙТА" `date`
+        echo "Файли сайту заархівовано" `date` &&
+        du -h $workdir/$site/$site.zip || echo "ПОМИЛКА СТВОРЕННЯ ФАЙЛІВ САЙТУ" `date`
 
 
-echo "Архивирую файлы изображений" `date`
+echo "Архівую файли зображень" `date`
 
     zip -rq $workdir/$site/$site-img.zip $sitedir/img/p/
 
     [ -f "$workdir/$site/$site-img.zip" ] &&
-        echo "Файлы изображений заархивированы" `date` &&
-        du -h $workdir/$site/$site-img.zip || echo "ОШИБКА СОЗДАНИЯ ИЗОБРАЖЕНИЙ" `date`
+        echo "Файлы зображень заархівовано" `date` &&
+        du -h $workdir/$site/$site-img.zip || echo "ПОМИЛКА СТВОРЕННЯ ЗОБРАЖЕНЬ" `date`
 
+
+echo "Починаю завантаження на гугл диск" `date`
 
 $workdir/drive push -ignore-conflict -quiet $workdir/$site
+
+echo "Завантаження завершено" `date`
