@@ -27,7 +27,7 @@ echo `date` "Moving the old backup"
 echo ""
 echo `date` "Archiving files and database"
 
-zip -rq "$workdir"/"$site"/"$site".zip -x="$sitedir"/wp-content/cache/min/1/\* -x="$sitedir"/wp-content/cache/wp-rocket/\* "$sitedir"/ "$workdir"/"$site".sql
+zip -rq "$workdir"/"$site"/"$site".zip -x="$sitedir"/wp-content/cache/min/1/\* -x="$sitedir"/wp-content/cache/wp-rocket/\* "$sitedir"/ "$workdir"/"$site"/"$site".sql
     
     returncode=$?    
     if [ "$returncode" -ne 0 ]; then
@@ -35,7 +35,7 @@ zip -rq "$workdir"/"$site"/"$site".zip -x="$sitedir"/wp-content/cache/min/1/\* -
  	echo `date` "Error creating zip file. Oldone "$workdir"/"$site"/"$site".zip.old will stay"       
 	rm -rf "$workdir"/"$site"/"$site".zip
     else
-    [ -f "$workdir"/"$site"/"$site".zip" ] &&
+    [ -f ""$workdir"/"$site"/"$site".zip" ] &&
         du -h "$workdir"/"$site"/"$site".zip &&
 	rm -rf "$workdir"/"$site"/"$site".sql &&
 	rm -rf "$workdir"/"$site"/"$site".zip.old && 
