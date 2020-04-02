@@ -2,45 +2,82 @@
 #  Backup to Google Drive Script For Prestashop by alpi  #
 ##########################################################
 
+DATE_FORMAT='+[%d-%m-%Y] %H:%M:%S'
+
 site= site.com
 workdir= /var/backupdir
 sitedir= /var/www/sitedir
+
 mysqldb    = db_name
 mysqluser  = db_user
 mysqlpass  = db_password
 
-echo "Роблю дамп бази даних" `date`
+backuplog=/path/to/backup.log
+email=send@email.com
 
-    mysqldump -u $mysqluser -p$mysqlpass $mysqldb > $workdir/$site.sql
-    zip -rq $workdir/$site/$site.sql.zip $workdir/$site.sql
+echo $(date "$DATE_FORMAT") "| Starting..."
+echo $(date "$DATE_FORMAT") "| Backuping database"
 
-    [ -f "$workdir/$site.sql" ] &&
-        echo "Файл SQL бази створено" `date` &&
-        du -h $workdir/$site.sql || echo "ПОМИЛКА СТВОРЕННЯ БАЗИ SQL" `date`
+mysqldump -u "$mysqluser" -p"$mysqlpass" "$mysqldb" > "$workdir"/"$site"/"$site".sql
 
-    rm -rf $workdir/$site.sql
+    returncode=$?
 
+    if [ $returncode -ne 0 ] 
+    then
+	echo $(date "$DATE_FORMAT") "| Failed to create a database backup. Return code is "$returncode""
+	echo "Error backuping "$site" database. mysqldump returned code $returncode" | mail -s "Error backuping DB "$site"" -a "$backuplog" "$email"
+    else
+        echo $(date "$DATE_FORMAT") "| Database backup created" 
+    fi
 
-echo "Архівую файли магазину (без картинок)" `date`
+[ -f ""$workdir"/"$site"/"$site".zip" ] && [ -f ""$workdir"/"$site"/"$site"-img.zip" ] && 
+    echo $(date "$DATE_FORMAT") "| Moving the old backup" &&
+    mv "$workdir"/"$site"/"$site".zip "$workdir"/"$site"/"$site".zip.old &&
+    mv "$workdir"/"$site"/"$site"-img.zip "$workdir"/"$site"/"$site"-img.zip.old
 
-    zip -rq -x=$sitedir/cache/smarty/\* -x=$sitedir/img/p/\* -x=$sitedir/newpresta/\* $workdir/$site/$site.zip $sitedir/
+echo $(date "$DATE_FORMAT") "| Archiving files and database"
 
-    [ -f "$workdir/$site/$site.zip" ] &&
-        echo "Файли сайту заархівовано" `date` &&
-        du -h $workdir/$site/$site.zip || echo "ПОМИЛКА СТВОРЕННЯ ФАЙЛІВ САЙТУ" `date`
+zip -rq -x="$sitedir"/cache/smarty/\* -x="$sitedir"/img/p/\* -x="$sitedir"/upload/\* -x="$sitedir"/modules/expresscache/cache/\* "$workdir"/"$site"/"$site".zip "$sitedir"/ "$sitedir"/"$site".sql
 
+    returncode=$?
 
-echo "Архівую файли зображень" `date`
+    if [ $returncode -ne 0 ] 
+    then
+ 	echo $(date "$DATE_FORMAT") "| Error creating zip file. "$workdir"/"$site"/"$site".zip.old will stay. Return code is "$returncode""       
+	echo "Error when creating "$site" archieve. ZIP returned code $returncode" | mail -s "Error creating backup "$site"" -a "$backuplog" "$email" 
+	rm -rf "$workdir"/"$site"/"$site".zip
+    else
+	rm -rf "$workdir"/"$site"/"$site".sql 
+	rm -rf "$workdir"/"$site"/"$site".zip.old  
+	echo $(date "$DATE_FORMAT") "| Archive created. Old archive deleted"
+    fi
 
-    zip -rq $workdir/$site/$site-img.zip $sitedir/img/p/
+echo $(date "$DATE_FORMAT") "| Archiving images"
+                                                                                                                                                      
+zip -rq $workdir/$site/$site-img.zip $sitedir/img/p/                                                                                              
+ 
+   returncode=$?
 
-    [ -f "$workdir/$site/$site-img.zip" ] &&
-        echo "Файлы зображень заархівовано" `date` &&
-        du -h $workdir/$site/$site-img.zip || echo "ПОМИЛКА СТВОРЕННЯ ЗОБРАЖЕНЬ" `date`
+    if [ $returncode -ne 0 ] 
+    then
+ 	echo $(date "$DATE_FORMAT") "| Error creating images archive. Return code "$returncode"" 
+	echo "Error when creating "$site" archieve. ZIP returned code $returncode" | mail -s "Error creating backup "$site"" -a "$backuplog" "$email" 
+	rm -rf "$workdir"/"$site"/"$site"-img.zip
+    else
+	rm -rf "$workdir"/"$site"/"$site"-img.zip.old && 
+	echo $(date "$DATE_FORMAT") "| Images archive created. Old archive deleted"
+    fi
+                                                                                                                                                     
+echo $(date "$DATE_FORMAT") "| Starting upload to the google disk"
 
-
-echo "Починаю завантаження на гугл диск" `date`
-
-$workdir/drive push -ignore-conflict -quiet $workdir/$site
-
-echo "Завантаження завершено" `date`
+[ -f ""$workdir"/"$site"/"$site".zip" ] && [ -f ""$workdir"/"$site"/"$site"-img.zip" ] &&                                                                     "$workdir"/drive push -ignore-conflict -ignore-name-clashes -quiet "$workdir"/"$site"/"$site".zip "$workdir"/"$site"/"$site"-img.zip > /dev/null || echo $(date "$DATE_FORMAT") "| No files to upload, cancelling" 
+    
+    returncode=$?
+    
+    if [ $returncode -ne 0 ]
+    then
+	echo $(date "$DATE_FORMAT") "| Error occured. Upload NOT complete. Return code is "$returncode""
+    	echo "Error occured while uploading archive to google" | mail -s "Error while uploading "$site" backup" -a "$backuplog" "$email"
+    else
+	echo $(date "$DATE_FORMAT") "| Task complete"
+    fi
