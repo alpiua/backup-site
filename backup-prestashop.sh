@@ -1,3 +1,4 @@
+#!/bin/sh
 
 ##  Backup to Google Drive. Author: Oleksii Pylypchuk 
 ##  github: https://github.com/alpi-ua/backup-site/
