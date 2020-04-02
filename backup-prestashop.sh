@@ -1,6 +1,14 @@
-##########################################################
-#  Backup to Google Drive Script For Prestashop by alpi  #
-##########################################################
+
+##  Backup to Google Drive. Author: Oleksii Pylypchuk 
+##  github: https://github.com/alpi-ua/backup-site/
+##  
+##  This script is designed to upload daily backup of the wordpress site to the google drive
+##  In case of fail email is sending to admin via mailx with log attached
+##  You should download https://github.com/odeke-em/drive and specify backup.log, email for using this script
+##
+##  The crontab record is
+##  10 5 * * * /path/to/script/backup-wordpress.sh > /path/to/backup.log 2>&1
+##  Make sure the owner of the backup.log is the same who is running cron job
 
 DATE_FORMAT='+[%d-%m-%Y] %H:%M:%S'
 
