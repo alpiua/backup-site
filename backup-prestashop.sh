@@ -114,4 +114,4 @@ echo $(date "$DATE_FORMAT") "| Starting upload to the google disk"
     fi
 
 # IN CASE WE ARE UNDER ROOT
-chown -R ${USER}:${USER} ${workdir}
+chown -R ${USER}:${USER} ${workdir} ${backuplog}
