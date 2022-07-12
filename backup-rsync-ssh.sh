@@ -58,12 +58,14 @@ fi
 }
 
 function delete_old() {
-find "$1" -type d -mtime +"$BACKUPS_NUM" | xargs rm -rf 
+OLD_BKP="$(ls -1 | sed 's/^\([^0-9]*\)\([0-9]\+\.txt\)/\2\1/g' | sort -n | head -1 | sed 's/^\([0-9]\+\.txt\)\(.*\)/\2\1/g')"
+rm -rf "$1"/"$OLD_BKP"
+log "Removing backup "$OLD_BKP""
 }
 
 function check_rdir() {
 [ -d "$RDIR/$site"_backup ] || mkdir -p "$RDIR"/"$site"_backup
-log "Removing old backups from external share" && delete_old $RDIR 
+find "$1" -type d -mtime + $(("$BACKUPS_NUM" - 1)) | xargs rm -rf && log "Removing old backups from external share"
 }
 
 function upload() {
@@ -112,9 +114,7 @@ if grep -qs "$RDIR" /proc/mounts
   else
     log "mounting external storage" 
     "$SCRIPT_DIR"/sshfs.sh mount
-    #/usr/bin/sshfs -p 23 "$RUSER"@"$RSERVER": "$RDIR"
     check_rdir
-    #sudo /usr/bin/fusermount -u "$RDIR"
     "$SCRIPT_DIR"/sshfs.sh unmount
 fi
 
