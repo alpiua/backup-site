@@ -9,11 +9,11 @@
 
 site=
 exclude="-x=cache/smarty/\* -x=img/p/\* -x=upload/\* -x=var/cache/\*"   # prestashop settings
-site_images="img/p" 
+site_images="img/p"    # prestashop images folder to store separately
 
 BACKUPS_NUM=3
 USER=
-email=mail@olua.net
+email=alpi@keemail.me
 
 # LOCAL SERVER VARS
 WORKDIR="/var/backups/local"
