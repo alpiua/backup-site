@@ -8,12 +8,12 @@
 ##  require packages: bsd-mailx/mailx, sshfs
 
 site=
-exclude="-x=cache/smarty/\* -x=img/p/\* -x=upload/\* -x=var/cache/\* -rq"   # prestashop settings
+exclude="-x=cache/smarty/\* -x=img/p/\* -x=upload/\* -x=var/cache/\*"   # prestashop settings
 site_images="img/p" 
 
 BACKUPS_NUM=3
 USER=
-email=alpi@keemail.me
+email=mail@olua.net
 
 # LOCAL SERVER VARS
 WORKDIR="/var/backups/local"
@@ -49,13 +49,13 @@ rm -f ${WORKDIR}/error_output
 
 function checkjob() {
 returncode=$?
-if [ $returncode -ne 0 ]
+if [ ${returncode} -ne 0 ]
   then
-    log "-- Failed to create a "$2" backup. Return code is "$returncode". Original message: $(cat ${WORKDIR}/error_output | tr -d '\n')"
-    echo "Error backuping ${site} "$2". Program returned code $returncode" | mail -s "Error backuping ${site} "$2"" ${ATTACHMENT} ${email}
+    log "-- Failed to create a "$2" backup. Return code is ${returncode}. Original message: $(cat ${WORKDIR}/error_output | tr -d '\n')"
+    echo "Error backuping ${site} "$2". Program returned code ${returncode}" | mail -s "Error backuping ${site} $2" ${ATTACHMENT} ${email}
     [[ -n $3 ]] && rm -rf "$3" && log "-- deleting unfinished part"
   else
-    log "|_ New $2 backup created" && rm -rf "$3".old
+    log "|_ New $2 backup created"
 fi
 }
 
@@ -66,16 +66,16 @@ log "Removing backup ${OLD_BKP}"
 }
 
 function check_rdir() {
-[ -d "${RDIR}/${site}"_backup ] || mkdir -p ${RDIR}/${site}_backup
+[ -d ${RDIR}/${site}_backup ] || mkdir -p ${RDIR}/${site}_backup
 find "$1" -type d -mtime + $((${BACKUPS_NUM} - 1)) | xargs rm -rf && log "Removing old backups from external share"
 }
 
 function upload() {
 rsync -re "ssh -p 23" ${BACKUP_DIR} ${RUSER}@${RSERVER}:${site}_backup/ &>${WORKDIR}/error_output
 returncode=$?
-if [ $returncode -ne 0 ]
+if [ ${returncode} -ne 0 ]
   then
-    log "-- Error occured. Upload unsuccessful. Return code is "$returncode". Original message: $(cat ${WORKDIR}/error_output | tr -d '\n')"
+    log "-- Error occured. Upload unsuccessful. Return code is ${returncode}. Original message: $(cat ${WORKDIR}/error_output | tr -d '\n')"
     echo "Error occured while uploading "$1" to external share" | mail -s "Error uploading ${site} backup" ${ATTACHMENT}" $email"
   else
     log "|_Upload finished"
@@ -138,7 +138,7 @@ cd ${BACKUP_DIR} ; zip -rq ${database} ${site}.sql &>${WORKDIR}/error_output
 checkjob "$?" "database" ${database} && rm -rf ${site}.sql
 
 log "Archiving files"
-cd ${SITEDIR} ; zip ${exclude} ${files} . &>${WORKDIR}/error_output
+cd ${SITEDIR} ; zip ${exclude} -rq ${files} . &>${WORKDIR}/error_output
 checkjob "$?" "files" ${files}
 
 log "Archiving images"
