@@ -1,11 +1,11 @@
 #!/bin/bash
 
 ##  Backup to External Drive via sshfs/rsync BACKUP_NUM full copies
-##  Backup to local storage
-##  
-##  Author: Oleksii Pylypchuk 
-##  github: https://github.com/alpi-ua/backup-site/
-##  require packages: bsd-mailx, sshfs
+##  Backup to local storage full copies until have free space, then delete the oldest
+##  Error reporting via email
+##  Autoinstall sshfs mount script, sudo, crontask with first run under root
+##  Author: Oleksii Pylypchuk          github: https://github.com/alpi-ua/backup-site/
+##  require packages: bsd-mailx/mailx, sshfs
 
 site=
 exclude="-x=cache/smarty/\* -x=img/p/\* -x=upload/\* -x=var/cache/\* -rq"   # prestashop settings
