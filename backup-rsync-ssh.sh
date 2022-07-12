@@ -13,7 +13,7 @@ site_images="img/p"
 
 BACKUPS_NUM=3
 USER=
-email=mail@olua.net
+email=alpi@keemail.me
 
 # LOCAL SERVER VARS
 WORKDIR="/var/backups/local"
