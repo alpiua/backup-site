@@ -1,24 +1,20 @@
 #!/bin/bash
 
-##  Backup to External Drive via sshfs/rsync BACKUP_NUM full copies
-##  Backup to local storage full copies until have free space, then delete the oldest
-##  Error reporting via email
-##  Autoinstall sshfs mount script, sudo, crontask with first run under root
-##  Author: Oleksii Pylypchuk          github: https://github.com/alpi-ua/backup-site/
-##  require packages: bsd-mailx/mailx, sshfs
+##  Backup to External Drive via sshfs/rsync
+##  Author: Oleksii Pylypchuk 
+##  github: https://github.com/alpi-ua/backup-site/
+##  require packages: bsd-mailx, sshfs
 
 site=
-exclude="-x=cache/smarty/\* -x=img/p/\* -x=upload/\* -x=var/cache/\*"   # prestashop settings
-site_images="img/p"    # prestashop images folder to store separately
+email=alpi@keemail.me
 
 BACKUPS_NUM=3
 USER=
-email=alpi@keemail.me
 
 # LOCAL SERVER VARS
 WORKDIR="/var/backups/local"
-SITEDIR="/var/www/$USER"
-BACKUP_DIR="${WORKDIR}/${site}_$(date '+%d-%m-%Y')"
+SITEDIR="/var/www/campdavid_ch/app/src"
+BACKUP_DIR=${WORKDIR}/${site}_$(date '+%d-%m-%Y')
 SCRIPT_DIR="/var/backups"
 
 # MYSQL DB VARS
@@ -41,6 +37,7 @@ SITE_SIZE=$(du -s ${SITEDIR} | cut -f 1)
 ATTACHMENT="-f $backuplog"        # Ubuntu : bsd-mailx 8
 #ATTACHMENT="-a $backuplog"        # RHEL   : mailx 12+
 
+
 ### FUNCTIONS
 function log() {
 echo "$(date '+[%d-%m-%Y] %H:%M:%S') | $1" >> $backuplog
@@ -51,23 +48,23 @@ function checkjob() {
 returncode=$?
 if [ ${returncode} -ne 0 ]
   then
-    log "-- Failed to create a "$2" backup. Return code is ${returncode}. Original message: $(cat ${WORKDIR}/error_output | tr -d '\n')"
+    log "!! Failed to create a "$2" backup. Return code is ${returncode}. Original message: $(cat ${WORKDIR}/error_output | tr -d '\n')"
     echo "Error backuping ${site} "$2". Program returned code ${returncode}" | mail -s "Error backuping ${site} $2" ${ATTACHMENT} ${email}
-    [[ -n $3 ]] && rm -rf "$3" && log "-- deleting unfinished part"
+    [[ -n $3 ]] && rm -rf "$3" && log "!! deleting unfinished part"
   else
     log "|_ New $2 backup created"
 fi
 }
 
 function delete_old() {
-OLD_BKP="$(ls -1 | sed 's/^\([^0-9]*\)\([0-9]\+\.txt\)/\2\1/g' | sort -n | head -1 | sed 's/^\([0-9]\+\.txt\)\(.*\)/\2\1/g')"
-rm -rf "$1"/${OLD_BKP}
-log "Removing backup ${OLD_BKP}"
+OLD_BKP="$(cd $1; ls -1 | sed 's/^\([^0-9]*\)\([0-9]\+\.txt\)/\2\1/g' | sort -n | head -1 | sed 's/^\([0-9]\+\.txt\)\(.*\)/\2\1/g')"
+rm -rf $1/${OLD_BKP} && log "|_ Removing backup ${OLD_BKP}"
 }
 
 function check_rdir() {
-[ -d ${RDIR}/${site}_backup ] || mkdir -p ${RDIR}/${site}_backup
-find "$1" -type d -mtime + $((${BACKUPS_NUM} - 1)) | xargs rm -rf && log "Removing old backups from external share"
+RDIR_BACKUP="$1/${site}_backup"
+[ -d ${RDIR_BACKUP} ] || mkdir -p ${RDIR_BACKUP}
+find ${RDIR_BACKUP} -type d -mtime +$((${BACKUPS_NUM} - 1)) | xargs rm -rf && log "Removing backups older than ${BACKUPS_NUM} days from external share"
 }
 
 function upload() {
@@ -81,6 +78,7 @@ if [ ${returncode} -ne 0 ]
     log "|_Upload finished"
   fi
 }
+
 
 ### Installing sudo and sshfs mount script
 
@@ -101,15 +99,17 @@ EOF
     echo "You should generate and install ssh keys from user to remote server"
 
     [[ ! -f /etc/cron.d/backup-${SITE} ]] && \
-    echo "Installing cron task for backup in /etc/cron.d" && cat > /etc/cron.d/backup-${site} <<EOF
-0 5 * * * ${USER} $(pwd)/$0
+    echo "Installing cron task for backup in /etc/cron.d" && cat > /etc/cron.d/backup-${USER} <<EOF
+0 5 * * * ${USER} $(realpath $0)
 EOF
   else
     [[ ! -f /etc/sudoers.d/${USER} ]] && [[ ! -f ${SCRIPT_DIR}/sshfs.sh ]] && \
     echo "First run of this script should happen as 'root'" && exit 0
 fi
 
+
 ### SCRIPT STARTS
+
 echo "=================================================================" >> $backuplog
 
 log "Starting backup to ${site}"
@@ -117,11 +117,11 @@ log "Starting backup to ${site}"
 if grep -qs ${RDIR} /proc/mounts
   then
     log "external storage is mounted."
-    check_rdir
+    check_rdir ${RDIR}
   else
     log "mounting external storage"
     ${SCRIPT_DIR}/sshfs.sh mount
-    check_rdir
+    check_rdir ${RDIR}
     ${SCRIPT_DIR}/sshfs.sh unmount
 fi
 
@@ -134,16 +134,16 @@ fi
 log "Backuping database"
 mysqldump -u ${MYSQLUSER} -p${MYSQLPASS} ${MYSQLDB} > ${BACKUP_DIR}/${site}.sql
 
-cd ${BACKUP_DIR} ; zip -rq ${database} ${site}.sql &>${WORKDIR}/error_output
-checkjob "$?" "database" ${database} && rm -rf ${site}.sql
+cd ${BACKUP_DIR} ; zip -rq "$database" ${site}.sql &>${WORKDIR}/error_output
+checkjob "$?" "database" "$database" && rm -rf ${site}.sql
 
 log "Archiving files"
-cd ${SITEDIR} ; zip ${exclude} -rq ${files} . &>${WORKDIR}/error_output
-checkjob "$?" "files" ${files}
+cd ${SITEDIR} ; zip -x=cache/smarty/\* -x=img/p/\* -x=upload/\* -x=var/cache/\* -rq "$files" . &>${WORKDIR}/error_output
+checkjob "$?" "files" "$files"
 
 log "Archiving images"
-cd ${SITEDIR} ; zip -rq ${images} ${site_images} &>${WORKDIR}/error_output
-checkjob "$?" "images" ${images}
+cd ${SITEDIR} ; zip -rq "$images" img/p/ &>${WORKDIR}/error_output
+checkjob "$?" "images" "$images"
 
 log "Archiving system settings"
 zip -rq ${BACKUP_DIR}/etc.zip /etc /var/spool/crontabs /var/backups/backup.sh &>/dev/null
