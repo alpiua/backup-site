@@ -15,7 +15,7 @@ USER=
 
 # LOCAL SERVER VARS
 WORKDIR="/var/backups/local"
-SITEDIR="/var/www/campdavid_ch/app/src"
+SITEDIR=""
 BACKUP_DIR=${WORKDIR}/${site}_$(date '+%d-%m-%Y')
 SCRIPT_DIR="/var/backups"
 
@@ -94,7 +94,7 @@ if [[ `whoami` == 'root' ]]
     echo "Installing sshfs mount script" && cat > ${SCRIPT_DIR}/sshfs.sh <<EOF
 #!/bin/bash
 [[ \$1 == 'unmount' ]] && sudo /usr/bin/fusermount -u ${RDIR} && exit 0
-[[ \$1 == 'mount' ]] && /usr/bin/sshfs -p 23 ${RUSER}@${RSERVER}: ${RDIR}
+[[ \$1 == 'mount' ]] && /usr/bin/sshfs -p ${RPORT} ${RUSER}@${RSERVER}: ${RDIR}
 EOF
     chmod +x ${SCRIPT_DIR}/sshfs.sh    
     chown ${USER}:${USER} ${RDIR}
