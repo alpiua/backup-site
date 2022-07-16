@@ -19,13 +19,13 @@ SITEDIR="/var/www/campdavid_ch/app/src"
 BACKUP_DIR=${WORKDIR}/${site}_$(date '+%d-%m-%Y')
 SCRIPT_DIR="/var/backups"
 
-# MYSQL DB VARS
 MYSQLDB=""
 MYSQLUSER=""
 MYSQLPASS=""
 
 # REMOTE SERVER VARS
 RSERVER=""
+RPORT="23"
 RUSER=""
 RDIR=/var/backups/${RSERVER}
 
@@ -71,7 +71,7 @@ log "|_ External storage check complete"
 }
 
 function upload() {
-rsync -re "ssh -p 23" ${BACKUP_DIR} ${RUSER}@${RSERVER}:${site}_backup/ &>${WORKDIR}/error_output
+rsync -re "ssh -p ${RPORT}" ${BACKUP_DIR} ${RUSER}@${RSERVER}:${site}_backup/ &>${WORKDIR}/error_output
 returncode=$?
 if [ ${returncode} -ne 0 ] 
   then
