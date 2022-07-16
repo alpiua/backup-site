@@ -76,9 +76,9 @@ returncode=$?
 if [ ${returncode} -ne 0 ] 
   then
     log "-- Error occured. Upload unsuccessful. Return code is ${returncode}. Original message: $(cat ${WORKDIR}/error_output | tr -d '\n')"
-    echo "Error occured while uploading "$1" to external share" | mail -s "Error uploading ${site} backup" ${ATTACHMENT}" $email"
+    echo "Error occured while uploading "$1" to external share" | mail -s "Error uploading ${site} backup" ${ATTACHMENT}" ${email}"
   else
-    log "|_Upload finished"
+    log "|_ Upload finished"
   fi  
 }
 
@@ -110,24 +110,12 @@ EOF
 fi
 
 ### SCRIPT STARTS
-echo "=================================================================" >> $backuplog
-
-log "Starting backup to ${site}"
-
-log "Working with external storage"
-if grep ${RDIR} /proc/mounts | grep -qs "user_id=$(getent passwd | grep ${USER} | head -1 | cut -d':' -f 4)"
-  then 
-    log "|_ External storage is mounted properly. Procceeding"
-    check_rdir ${RDIR}
-  else
-    [[ ! -d $RDIR ]] && log "|_ Unpropper mount of external storage. Remounting" && ${SCRIPT_DIR}/sshfs.sh unmount
-    ${SCRIPT_DIR}/sshfs.sh mount
-    check_rdir ${RDIR}
-    ${SCRIPT_DIR}/sshfs.sh unmount
-fi
 
 [[ -d ${BACKUP_DIR} ]] || mkdir -p ${BACKUP_DIR}
 [[ -f ${backuplog} ]] || touch ${backuplog} && chown ${USER}:${USER} ${backuplog}
+
+echo "=================================================================" >> ${backuplog}
+log "Starting backup to ${site}"
 
 [ ${FREE_SPACE} -lt ${SITE_SIZE} ] && log "Not enough free space on local host. Removing old backup" && delete_old ${WORKDIR} 
 
@@ -147,6 +135,18 @@ checkjob "$?" "images" "${images}"
 
 log "Archiving system settings"
 zip -rq ${BACKUP_DIR}/etc.zip /etc /var/spool/crontabs /var/backups/backup.sh &>/dev/null
+
+log "Working with external storage"
+if grep ${RDIR} /proc/mounts | grep -qs "user_id=$(getent passwd | grep ${USER} | head -1 | cut -d':' -f 4)"
+  then 
+    log "|_ External storage is mounted"
+    check_rdir ${RDIR}
+  else
+    [[ ! -d $RDIR ]] && log "|_ Unpropper mount of external storage. Remounting" && ${SCRIPT_DIR}/sshfs.sh unmount
+    ${SCRIPT_DIR}/sshfs.sh mount
+    check_rdir ${RDIR}
+    ${SCRIPT_DIR}/sshfs.sh unmount
+fi
 
 log "Uploading backup"
 upload ${BACKUP_DIR}
