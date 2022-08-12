@@ -49,6 +49,7 @@ function checkjob() {
 returncode=$?
 if [ ${returncode} -ne 0 ] 
   then
+    [[ -f ${backuplog} ]] || ATTACHMENT=""
     log "!! Failed to create a "$2" backup. Return code is ${returncode}. Original message: $(cat ${WORKDIR}/error_output | tr -d '\n')"
     echo "Error backuping ${site} "$2". Program returned code ${returncode}" | mail -s "Error backuping ${site} $2" ${ATTACHMENT} ${email}
     [[ -n $3 ]] && rm -rf "$3" && log "!! deleting unfinished part"
@@ -58,7 +59,7 @@ fi
 }
 
 function delete_old() {
-OLD_BKP="$(cd $1; ls -1 | sed 's/^\([^0-9]*\)\([0-9]\+\.txt\)/\2\1/g' | sort -n | head -1 | sed 's/^\([0-9]\+\.txt\)\(.*\)/\2\1/g')"
+OLD_BKP="$(cd $1; ls -1tr | sed 's/^\([^0-9]*\)\([0-9]\+\.txt\)/\2\1/g' | head -1 | sed 's/^\([0-9]\+\.txt\)\(.*\)/\2\1/g')"
 rm -rf $1/${OLD_BKP} && log "|_ Removing backup ${OLD_BKP}"
 }
 
@@ -75,6 +76,7 @@ rsync -re "ssh -p ${RPORT}" ${BACKUP_DIR} ${RUSER}@${RSERVER}:${site}_backup/ &>
 returncode=$?
 if [ ${returncode} -ne 0 ] 
   then
+    [[ -f ${backuplog} ]] || ATTACHMENT=""
     log "-- Error occured. Upload unsuccessful. Return code is ${returncode}. Original message: $(cat ${WORKDIR}/error_output | tr -d '\n')"
     echo "Error occured while uploading "$1" to external share" | mail -s "Error uploading ${site} backup" ${ATTACHMENT}" ${email}"
   else
