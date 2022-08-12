@@ -1,5 +1,4 @@
 #!/bin/bash
-
 ##  Backup to External Drive via sshfs/rsync
 ##  Author: Oleksii Pylypchuk 
 ##  github: https://github.com/alpi-ua/backup-site/
